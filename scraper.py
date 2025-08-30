@@ -39,9 +39,25 @@ def scrape_html(url):
     # Change to the scrapy project directory
     project_dir = os.path.join(os.path.dirname(__file__), 'universal_scraper')
 
-    # Run scrapy with HTML format
+    # Check if we need JavaScript execution for dynamic content
+    needs_javascript = any(domain in url for domain in [
+        'finance.yahoo.com',
+        'twitter.com',
+        'facebook.com',
+        'instagram.com',
+        'linkedin.com',
+        'reddit.com'
+    ])
+
+    if needs_javascript:
+        print("Detected site that requires JavaScript execution. Using Selenium spider...")
+        spider_name = "selenium_spider"
+    else:
+        spider_name = "universal"
+
+    # Run scrapy with appropriate spider
     cmd = [
-        "scrapy", "crawl", "universal",
+        "scrapy", "crawl", spider_name,
         "-a", f"url={url}",
         "-a", "format=html",
         "-s", "ROBOTSTXT_OBEY=False"

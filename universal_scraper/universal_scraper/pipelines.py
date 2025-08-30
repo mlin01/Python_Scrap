@@ -170,11 +170,9 @@ class DataExportPipeline:
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 
-        # Check if this is HTML format (items will have html_content and minimal other fields)
+        # Check if this is HTML format (items will have html_content field)
         is_html_format = (len(self.items) > 0 and 
-                         'html_content' in self.items[0] and 
-                         'text_content' not in self.items[0] and 
-                         'links' not in self.items[0])
+                         'html_content' in self.items[0])
         
         # Debug logging
         spider.logger.info(f"Items count: {len(self.items)}")
@@ -194,33 +192,41 @@ class DataExportPipeline:
             self._export_json(timestamp)
 
     def _export_json(self, timestamp):
-        filename = os.path.join(self.output_dir, f"scraped_data_{timestamp}.json")
-        with open(filename, 'w', encoding='utf-8') as f:
-            json.dump(self.items, f, indent=2, ensure_ascii=False)
-        print(f"JSON data exported to {filename}")
+        """Display JSON data in terminal instead of exporting to file"""
+        print("\n" + "="*80)
+        print("SCRAPED DATA (JSON FORMAT)")
+        print("="*80)
+        
+        for i, item in enumerate(self.items, 1):
+            print(f"\n--- Item {i} ---")
+            print(json.dumps(item, indent=2, ensure_ascii=False))
+            print("-" * 40)
 
     def _export_html(self, timestamp):
+        """Display HTML content summary in terminal instead of exporting to file"""
         if not self.items:
             return
 
-        # For HTML format, create a single file with the HTML content
         item = self.items[0]  # Should only be one item for HTML format
-        title = item.get('title', 'scraped_page')
-        url = item.get('url', 'unknown_url')
-
-        # Create a clean filename from the title or URL
-        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).rstrip()
-        if not safe_title:
-            safe_title = "scraped_page"
-
-        filename = os.path.join(self.output_dir, f"{safe_title}_{timestamp}.html")
-
+        title = item.get('title', 'No title')
+        url = item.get('url', 'No URL')
         html_content = item.get('html_content', '')
 
-        # Write the HTML content directly
-        with open(filename, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-
-        print(f"HTML content exported to {filename}")
-        print(f"URL: {url}")
+        print("\n" + "="*80)
+        print("SCRAPED HTML CONTENT")
+        print("="*80)
         print(f"Title: {title}")
+        print(f"URL: {url}")
+        print(f"Content Length: {len(html_content)} characters")
+        print("-" * 40)
+        
+        # Show first 1000 characters of HTML content
+        preview_length = 1000
+        if len(html_content) > preview_length:
+            print("HTML Preview (first 1000 characters):")
+            print(html_content[:preview_length])
+            print("...")
+            print(f"(Content truncated. Full length: {len(html_content)} characters)")
+        else:
+            print("Full HTML Content:")
+            print(html_content)
