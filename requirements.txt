@@ -1,0 +1,5 @@
+Create web scrap project that can scrap any website.  Remember ANY website including most anti-scraping measures.
+Pick the language you want to use for the project (Python, JavaScript, etc.).
+If Python is chosen, be sure to create virtual environment and install necessary packages (e.g. BeautifulSoup, Scrapy, etc.).
+You must create detailed plans and specifications for the web scraper, including how it will handle anti-scraping measures (e.g. CAPTCHAs, rate limiting, etc.).
+Convert specifications to actionable tasks.md
