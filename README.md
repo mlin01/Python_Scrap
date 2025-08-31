@@ -68,6 +68,4 @@ universal_scraper/
 - Implement custom middlewares in `universal_scraper/middlewares.py`
 - Configure pipelines in `universal_scraper/pipelines.py`
 
-## License
 
-This project is for educational purposes. Always respect website terms of service and robots.txt files.
