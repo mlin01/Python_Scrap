@@ -1,0 +1,110 @@
+### Morningstar AAPL Dividends Page Test
+### This file contains HTTP-style test requests for the Universal Web Scraper
+### Use with REST Client extension in VS Code or similar tools
+
+### Test 1: Basic JSON scraping of Morningstar AAPL dividends page
+GET https://www.morningstar.com/stocks/xnas/aapl/dividends
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8
+Accept-Language: en-US,en;q=0.5
+Accept-Encoding: gzip, deflate, br
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+
+###
+
+### Test 2: Test with our scraper - JSON format
+### Run this command in terminal:
+### python simple_scraper.py "https://www.morningstar.com/stocks/xnas/aapl/dividends" json
+
+###
+
+### Test 3: Test with our scraper - HTML format
+### Run this command in terminal:
+### python simple_scraper.py "https://www.morningstar.com/stocks/xnas/aapl/dividends" html
+
+###
+
+### Test 4: Test with Selenium spider (for JavaScript content)
+### Run this command in terminal:
+### python simple_scraper.py "https://www.morningstar.com/stocks/xnas/aapl/dividends" json selenium_spider
+
+###
+
+### Test 5: Direct Scrapy command test
+### Run this command in terminal:
+### cd universal_scraper && python -m scrapy crawl universal -a url="https://www.morningstar.com/stocks/xnas/aapl/dividends" --nolog
+
+###
+
+### Test 6: Test with custom headers and settings
+### Create a custom test script for Morningstar with specific headers
+
+###
+
+### Additional test URLs for financial data scraping:
+
+### Apple Stock Quote
+GET https://finance.yahoo.com/quote/AAPL
+
+###
+
+### Apple Financials
+GET https://finance.yahoo.com/quote/AAPL/financials
+
+###
+
+### Apple News
+GET https://finance.yahoo.com/quote/AAPL/news
+
+###
+
+### MarketWatch AAPL
+GET https://www.marketwatch.com/investing/stock/aapl
+
+###
+
+### Google Finance AAPL
+GET https://www.google.com/finance/quote/AAPL:NASDAQ
+
+###
+
+### Expected Data Points from Morningstar AAPL Dividends:
+### - Dividend yield
+### - Dividend per share
+### - Ex-dividend date
+### - Payment date
+### - Dividend history table
+### - Dividend growth rate
+### - Payout ratio
+
+### Notes for testing:
+### 1. Morningstar may have anti-scraping measures
+### 2. JavaScript rendering might be required
+### 3. Rate limiting should be respected
+### 4. User agent rotation recommended
+### 5. Consider using selenium_spider for dynamic content
+
+### Security considerations:
+### - Respect robots.txt
+### - Implement delays between requests
+### - Use appropriate user agents
+### - Don't overwhelm the server
+
+### Command examples to run from project root:
+
+# Basic test with universal spider
+# python simple_scraper.py "https://www.morningstar.com/stocks/xnas/aapl/dividends"
+
+# Test with Selenium for JavaScript content
+# python simple_scraper.py "https://www.morningstar.com/stocks/xnas/aapl/dividends" json selenium_spider
+
+# Test with main scraper script
+# python scraper.py json "https://www.morningstar.com/stocks/xnas/aapl/dividends"
+
+# Test with HTML output
+# python scraper.py html "https://www.morningstar.com/stocks/xnas/aapl/dividends"
+
+# Direct Scrapy command with custom settings
+# cd universal_scraper
+# python -m scrapy crawl universal -a url="https://www.morningstar.com/stocks/xnas/aapl/dividends" -s DOWNLOAD_DELAY=3 -s ROBOTSTXT_OBEY=True
