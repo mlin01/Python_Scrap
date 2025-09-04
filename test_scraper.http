@@ -1,0 +1,44 @@
+
+### Test 2: Apple Dividends (Morningstar) - Full Content (Limited)
+# @name apple_dividends_full
+POST http://localhost:8000/scrape
+Content-Type: application/json
+
+{
+  "url": "https://www.morningstar.com/stocks/xnas/aapl/dividends"
+}
+
+###
+
+### Test 4: Yahoo Finance Quote - Full Content
+# @name yahoo_finance_full
+POST http://localhost:8000/scrape
+Content-Type: application/json
+
+{
+  "url": "https://finance.yahoo.com/quote/AAPL"
+}
+
+###
+
+### Test 5: MacroTrends Balance Sheet - Stats Mode
+# @name macrotrends_balance_stats
+POST http://localhost:8000/scrape
+Content-Type: application/json
+
+{
+  "url": "https://www.macrotrends.net/stocks/charts/AAPL/apple/balance-sheet"
+}
+
+###
+
+### Test 6: SEC EDGAR Filing - Full Content
+# @name sec_edgar_full
+POST http://localhost:8000/scrape
+Content-Type: application/json
+
+{
+  "url": "https://www.sec.gov/edgar/browse/?CIK=320193"
+}
+
+###

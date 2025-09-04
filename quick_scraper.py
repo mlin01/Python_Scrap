@@ -6,6 +6,7 @@ No parsing, no file creation, just raw HTML output
 
 import time
 import sys
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
@@ -17,6 +18,35 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+
+# Fix Windows encoding issues
+if sys.platform.startswith('win'):
+    os.environ['PYTHONIOENCODING'] = 'utf-8'
+    
+def safe_print(text):
+    """Print text safely, handling encoding issues on Windows"""
+    # Check if we're in return-content mode (should be silent)
+    if '--return-content' in sys.argv:
+        return  # Silent mode - no console output
+        
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Replace emojis with simple text for Windows console
+        safe_text = text.replace('🚀', '[ROCKET]')
+        safe_text = safe_text.replace('⚡', '[LIGHTNING]')
+        safe_text = safe_text.replace('📊', '[CHART]')
+        safe_text = safe_text.replace('✅', '[SUCCESS]')
+        safe_text = safe_text.replace('❌', '[FAIL]')
+        safe_text = safe_text.replace('🌐', '[GLOBE]')
+        safe_text = safe_text.replace('⏳', '[HOURGLASS]')
+        safe_text = safe_text.replace('🔄', '[REFRESH]')
+        safe_text = safe_text.replace('📈', '[TRENDING_UP]')
+        safe_text = safe_text.replace('⏰', '[CLOCK]')
+        safe_text = safe_text.replace('🎉', '[PARTY]')
+        safe_text = safe_text.replace('📄', '[FILE]')
+        safe_text = safe_text.replace('⚠️', '[WARNING]')
+        print(safe_text)
 
 def get_html_fast(url):
     """Simple fast HTML retrieval using requests"""
@@ -76,7 +106,7 @@ def has_meaningful_content(html_content):
     # Only consider it meaningful if we find actual dividend values in structured format
     score = dividend_values_found * 3 + pattern_matches * 5
 
-    print(f"   📊 Content analysis: {dividend_values_found} dividend values, {pattern_matches} patterns, score: {score}")
+    safe_print(f"   📊 Content analysis: {dividend_values_found} dividend values, {pattern_matches} patterns, score: {score}")
     return score > 10  # More strict threshold
 
 def get_html_selenium(url):
@@ -106,11 +136,11 @@ def get_html_selenium(url):
         driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         driver.set_page_load_timeout(60)
 
-        print("   🌐 Loading page...")
+        safe_print("   🌐 Loading page...")
         driver.get(url)
 
         # Wait for AWS WAF challenge to resolve
-        print("   ⏳ Waiting for anti-bot challenge...")
+        safe_print("   ⏳ Waiting for anti-bot challenge...")
 
         # First wait for the challenge page to load
         time.sleep(3)
@@ -118,7 +148,7 @@ def get_html_selenium(url):
         # Check if we're on a challenge page
         page_source = driver.page_source.lower()
         if "javascript is disabled" in page_source or "captcha" in page_source or "awswaf" in page_source:
-            print("   🔄 Detected anti-bot challenge, waiting for resolution...")
+            safe_print("   🔄 Detected anti-bot challenge, waiting for resolution...")
             # Wait for the challenge to resolve automatically
             max_wait = 30  # seconds
             waited = 0
@@ -127,12 +157,12 @@ def get_html_selenium(url):
                 waited += 2
                 current_source = driver.page_source.lower()
                 if "javascript is disabled" not in current_source and "captcha" not in current_source:
-                    print("   ✅ Challenge resolved!")
+                    safe_print("   ✅ Challenge resolved!")
                     break
-                print(f"   ⏳ Still waiting... ({waited}s)")
+                safe_print(f"   ⏳ Still waiting... ({waited}s)")
 
         # Additional wait for content to load
-        print("   📊 Waiting for financial content...")
+        safe_print("   📊 Waiting for financial content...")
         try:
             # Wait for either tables or dividend-specific content
             WebDriverWait(driver, 15).until(
@@ -140,16 +170,16 @@ def get_html_selenium(url):
                          "dividend per share" in d.page_source.lower() or
                          len(d.find_elements(By.CSS_SELECTOR, "[class*='dividend']")) > 0
             )
-            print("   📈 Financial content detected!")
+            safe_print("   📈 Financial content detected!")
         except:
-            print("   ⏰ Timeout waiting for content, proceeding anyway...")
+            safe_print("   ⏰ Timeout waiting for content, proceeding anyway...")
 
         # Get final HTML content
         html_content = driver.page_source
         return html_content, True
 
     except Exception as e:
-        print(f"   ❌ Selenium error: {str(e)}")
+        safe_print(f"   ❌ Selenium error: {str(e)}")
         return None, False
     finally:
         if driver:
@@ -162,31 +192,31 @@ def quick_scrape(url):
     2. Check content quality
     3. If insufficient, try Selenium (but faster)
     """
-    print(f"🚀 Quick scraping: {url}")
+    safe_print(f"🚀 Quick scraping: {url}")
     start_time = time.time()
 
     # Step 1: Try fast method
-    print("⚡ Trying fast requests method...")
+    safe_print("⚡ Trying fast requests method...")
     html_content, success = get_html_fast(url)
 
     if html_content and success:
         fast_time = time.time() - start_time
         has_data = has_meaningful_content(html_content)
 
-        print(f"✅ Fast method: {fast_time:.2f}s, {len(html_content):,} chars")
+        safe_print(f"✅ Fast method: {fast_time:.2f}s, {len(html_content):,} chars")
 
         if has_data:
-            print("📊 Found meaningful financial data!")
+            safe_print("📊 Found meaningful financial data!")
             total_time = time.time() - start_time
-            print(f"🎉 Completed in {total_time:.2f}s using FAST method")
+            safe_print(f"🎉 Completed in {total_time:.2f}s using FAST method")
             return html_content, 'fast', total_time
         else:
-            print("⚠️  Insufficient data, trying Selenium...")
+            safe_print("⚠️  Insufficient data, trying Selenium...")
     else:
-        print("❌ Fast method failed, trying Selenium...")
+        safe_print("❌ Fast method failed, trying Selenium...")
 
     # Step 2: Try Selenium (but optimized for speed)
-    print("🌐 Using Selenium (optimized)...")
+    safe_print("🌐 Using Selenium (optimized)...")
     selenium_start = time.time()
 
     html_content, success = get_html_selenium(url)
@@ -194,43 +224,162 @@ def quick_scrape(url):
     if html_content and success:
         selenium_time = time.time() - selenium_start
         total_time = time.time() - start_time
-        print(f"✅ Selenium method: {selenium_time:.2f}s, {len(html_content):,} chars")
-        print(f"🎉 Completed in {total_time:.2f}s using SELENIUM method")
+        safe_print(f"✅ Selenium method: {selenium_time:.2f}s, {len(html_content):,} chars")
+        safe_print(f"🎉 Completed in {total_time:.2f}s using SELENIUM method")
         return html_content, 'selenium', total_time
     else:
-        print("❌ Selenium method failed")
+        safe_print("❌ Selenium method failed")
         return None, 'failed', time.time() - start_time
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python quick_scraper.py <url> [output_mode]")
+        print("Usage: python quick_scraper.py <url> [output_mode] [--return-content]")
         print("  url: URL to scrape")
-        print("  output_mode: 'full' to print HTML, 'stats' for stats only (default)")
+        print("  output_mode: 'full' or 'stats' (default)")
+        print("  --return-content: Return content directly instead of saving to file")
         print("\nExamples:")
         print("  python quick_scraper.py \"https://www.morningstar.com/stocks/xnas/aapl/dividends\"")
         print("  python quick_scraper.py \"https://finance.yahoo.com/quote/AAPL\" full")
+        print("  python quick_scraper.py \"https://www.morningstar.com/stocks/xnas/aapl/dividends\" stats --return-content")
         sys.exit(1)
 
     url = sys.argv[1]
     output_mode = sys.argv[2] if len(sys.argv) > 2 else 'stats'
-
+    return_content = '--return-content' in sys.argv
+    
     html_content, method, duration = quick_scrape(url)
 
     if html_content:
-        print(f"\n✅ SUCCESS!")
-        print(f"   Method: {method}")
-        print(f"   Duration: {duration:.2f}s")
-        print(f"   Content: {len(html_content):,} characters")
+        if return_content:
+            # Return content directly without saving to file
+            result_data = {
+                'success': True,
+                'url': url,
+                'method': method,
+                'duration': duration,
+                'content_length': len(html_content),
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                'mode': output_mode
+            }
+            
+            if output_mode.lower() == 'full':
+                result_data['content'] = html_content
+            else:
+                # Create summary for stats mode
+                summary = f"""# Scraping Result Summary
 
-        if output_mode.lower() == 'full':
-            print(f"\n📄 HTML Content:")
-            print("=" * 80)
-            print(html_content)
+**URL**: {url}
+**Method**: {method}
+**Duration**: {duration:.2f}s
+**Content Length**: {len(html_content):,} characters
+**Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S')}
+**Status**: ✅ SUCCESS
+
+**Sample Content** (first 500 characters):
+```html
+{html_content[:500]}...
+```
+"""
+                result_data['content'] = summary
+            
+            # Output JSON for API consumption
+            import json
+            print("JSON_RESULT_START")
+            print(json.dumps(result_data, ensure_ascii=True, indent=2))
+            print("JSON_RESULT_END")
+            
         else:
-            print(f"\n💡 Use 'full' mode to see HTML content")
+            # Original file-saving behavior for backward compatibility
+            # Generate temporary file name based on URL and timestamp
+            import tempfile
+            from urllib.parse import urlparse
+            import hashlib
+            
+            # Create a safe filename from URL
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc.replace('www.', '').replace('.', '_')
+            url_hash = hashlib.md5(url.encode()).hexdigest()[:8]
+            timestamp = int(time.time())
+            
+            # Create temp file path
+            temp_dir = tempfile.gettempdir()
+            if output_mode.lower() == 'full':
+                output_file = f"{temp_dir}/scraper_{domain}_{url_hash}_{timestamp}.html"
+            else:
+                output_file = f"{temp_dir}/scraper_{domain}_{url_hash}_{timestamp}_stats.md"
+
+            # Create result summary
+            summary = f"""# Scraping Result Summary
+
+**URL**: {url}
+**Method**: {method}
+**Duration**: {duration:.2f}s
+**Content Length**: {len(html_content):,} characters
+**Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S')}
+**Status**: ✅ SUCCESS
+
+---
+
+"""
+
+            if output_mode.lower() == 'full':
+                # Save HTML content with summary header
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write("<!-- " + summary.replace('\n', '\n<!-- ') + " -->\n\n")
+                    f.write(html_content)
+                safe_print(f"\n✅ SUCCESS! Full HTML content saved to temporary file:")
+                safe_print(f"   📄 {output_file}")
+            else:
+                # Save only summary and stats
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write(summary)
+                    f.write(f"**Sample Content** (first 500 characters):\n```html\n{html_content[:500]}...\n```")
+                safe_print(f"\n✅ SUCCESS! Stats saved to temporary file:")
+                safe_print(f"   📄 {output_file}")
+        
+        safe_print(f"   Method: {method}")
+        safe_print(f"   Duration: {duration:.2f}s")
+        safe_print(f"   Content: {len(html_content):,} characters")
 
     else:
-        print(f"\n❌ FAILED to scrape {url}")
+        if return_content:
+            # Return error directly
+            error_data = {
+                'success': False,
+                'url': url,
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                'error': 'Both fast and Selenium methods failed'
+            }
+            import json
+            print("JSON_RESULT_START")
+            print(json.dumps(error_data, ensure_ascii=False, indent=2))
+            print("JSON_RESULT_END")
+        else:
+            # Original file-saving error behavior
+            error_file = output_file.replace('.html', '_error.md').replace('_stats.md', '_error.md')
+            error_summary = f"""# Scraping Error
+
+**URL**: {url}
+**Timestamp**: {time.strftime('%Y-%m-%d %H:%M:%S')}
+**Status**: ❌ FAILED
+
+## Error Details
+- Both fast and Selenium methods failed
+- Check URL validity and network connection
+- Possible anti-bot protection or site changes
+
+## Troubleshooting
+1. Verify the URL is accessible in a browser
+2. Check network connectivity
+3. Try again later if site is temporarily unavailable
+"""
+            
+            with open(error_file, 'w', encoding='utf-8') as f:
+                f.write(error_summary)
+            
+            safe_print(f"Error details saved to: {error_file}")
+        
+        safe_print(f"\n❌ FAILED to scrape {url}")
         sys.exit(1)
 
 if __name__ == "__main__":
