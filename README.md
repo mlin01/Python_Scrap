@@ -65,13 +65,14 @@ python quick_scraper.py "https://www.morningstar.com/stocks/xnas/msft/dividends"
 ```
 financial-scraper/
 ├── quick_scraper.py          # Main optimized scraper
-├── generic_financial_scraper.py  # Core framework (optional)
-├── website_configs.py        # Site-specific configurations  
-├── requirements.txt          # Dependencies
+├── requirements.txt          # Minimal dependencies (5 packages)
 ├── USAGE.md                 # Comprehensive documentation
-├── config/                  # Configuration files
-├── universal_scraper/       # Legacy Scrapy framework (optional)
-└── output/                  # Output directory
+├── README.md                # This file
+├── CLEANUP_SUMMARY.md       # Record of cleanup process
+├── .env.example             # Environment configuration template
+├── .gitignore               # Git ignore rules
+├── logs/                    # Log files directory (auto-created)
+└── output/                  # Output directory (auto-created)
 ```
 
 ## 📖 Documentation
@@ -80,18 +81,27 @@ financial-scraper/
 - **[GENERIC_SCRAPER_README.md](GENERIC_SCRAPER_README.md)**: Generic scraper documentation
 - **Command line help**: `python quick_scraper.py --help`
 
-## 🛠️ Development
+### 🛠️ Development
 
 ### Adding New Sites
-1. Add configuration to `website_configs.py`
-2. Test with `quick_scraper.py`
+1. Modify `quick_scraper.py` directly for new site support
+2. Test with the scraper
 3. Update documentation
 
 ### Contributing
 1. Fork the repository
 2. Create feature branch
-3. Add tests for new functionality
+3. Test changes thoroughly  
 4. Submit pull request
+
+## 📊 Dependencies
+
+Only **5 essential packages** required:
+- `selenium` - Browser automation for JavaScript sites
+- `beautifulsoup4` - HTML parsing
+- `requests` - HTTP requests
+- `lxml` - XML/HTML processing
+- `webdriver-manager` - Automatic ChromeDriver management
 
 ## 📜 License
 
