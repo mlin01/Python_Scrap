@@ -51,9 +51,12 @@ def safe_print(text):
 def get_html_fast(url):
     """Simple fast HTML retrieval using requests"""
     try:
+        # Detect if this looks like an API endpoint
+        is_api_endpoint = '/api/' in url.lower() or url.endswith('.json')
+        
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8' if is_api_endpoint else 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate',
             'Connection': 'keep-alive',
@@ -62,6 +65,7 @@ def get_html_fast(url):
 
         response = requests.get(url, headers=headers, timeout=30)
         response.raise_for_status()
+        
         return response.text, True
 
     except Exception as e:
@@ -233,23 +237,80 @@ def quick_scrape(url):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python quick_scraper.py <url> [output_mode] [--return-content]")
+        print("Usage: python quick_scraper.py <url> [output_mode] [--selector <css_selector>] [--return-content]")
         print("  url: URL to scrape")
         print("  output_mode: 'full' or 'stats' (default)")
+        print("  --selector: CSS selector to extract specific content (default: 'html')")
         print("  --return-content: Return content directly instead of saving to file")
         print("\nExamples:")
         print("  python quick_scraper.py \"https://www.morningstar.com/stocks/xnas/aapl/dividends\"")
         print("  python quick_scraper.py \"https://finance.yahoo.com/quote/AAPL\" full")
+        print("  python quick_scraper.py \"https://www.macrotrends.net/stocks/charts/AAPL/apple/balance-sheet\" full --selector \"#contenttablejqxgrid\"")
         print("  python quick_scraper.py \"https://www.morningstar.com/stocks/xnas/aapl/dividends\" stats --return-content")
         sys.exit(1)
 
     url = sys.argv[1]
-    output_mode = sys.argv[2] if len(sys.argv) > 2 else 'stats'
+    output_mode = sys.argv[2] if len(sys.argv) > 2 and not sys.argv[2].startswith('--') else 'stats'
+    
+    # Parse selector argument
+    css_selector = 'html'
+    if '--selector' in sys.argv:
+        selector_index = sys.argv.index('--selector')
+        if selector_index + 1 < len(sys.argv):
+            css_selector = sys.argv[selector_index + 1]
+    
     return_content = '--return-content' in sys.argv
     
     html_content, method, duration = quick_scrape(url)
 
     if html_content:
+        # Check if content is JSON (from API) and extract/format it
+        json_extracted = False
+        if '/api/' in url.lower() or url.endswith('.json'):
+            # Try to extract JSON from the response
+            try:
+                # First, try direct JSON parsing
+                import json
+                if html_content.strip().startswith('{') or html_content.strip().startswith('['):
+                    json_data = json.loads(html_content)
+                    html_content = json.dumps(json_data, indent=2, ensure_ascii=False)
+                    json_extracted = True
+                    safe_print("📋 Content is direct JSON - formatted")
+                else:
+                    # Try to extract JSON from HTML wrapper (common for API endpoints)
+                    from bs4 import BeautifulSoup
+                    soup = BeautifulSoup(html_content, 'html.parser')
+                    pre_tag = soup.find('pre')
+                    if pre_tag:
+                        json_text = pre_tag.get_text().strip()
+                        if json_text.startswith('{') or json_text.startswith('['):
+                            json_data = json.loads(json_text)
+                            html_content = json.dumps(json_data, indent=2, ensure_ascii=False)
+                            json_extracted = True
+                            safe_print("📋 Extracted and formatted JSON from HTML wrapper")
+            except (json.JSONDecodeError, ValueError, AttributeError) as e:
+                safe_print(f"⚠️ JSON extraction failed: {str(e)}")
+        
+        # Apply CSS selector if specified and content is not JSON
+        if css_selector != 'html' and not json_extracted:
+            try:
+                from bs4 import BeautifulSoup
+                soup = BeautifulSoup(html_content, 'html.parser')
+                selected_elements = soup.select(css_selector)
+                
+                if selected_elements:
+                    # Join all matching elements
+                    html_content = '\n'.join(str(element) for element in selected_elements)
+                    safe_print(f"📍 Applied CSS selector '{css_selector}' - found {len(selected_elements)} elements")
+                else:
+                    safe_print(f"⚠️ CSS selector '{css_selector}' found no matching elements")
+                    # Keep original content if selector doesn't match anything
+            except Exception as e:
+                safe_print(f"❌ Error applying CSS selector: {str(e)}")
+                # Keep original content if selector fails
+        elif css_selector != 'html' and json_extracted:
+            safe_print(f"⚠️ CSS selector '{css_selector}' ignored for JSON content")
+        
         if return_content:
             # Return content directly without saving to file
             result_data = {

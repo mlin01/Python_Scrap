@@ -48,12 +48,14 @@ class ScraperHTTPHandler(BaseHTTPRequestHandler):
                 query_params = parse_qs(parsed_url.query)
                 request_data = {
                     'url': query_params.get('url', [''])[0],
-                    'mode': query_params.get('mode', ['full'])[0]
+                    'mode': query_params.get('mode', ['full'])[0],
+                    'selector': query_params.get('selector', ['html'])[0]
                 }
             
             # Extract parameters
             url = request_data.get('url', '').strip()
             mode = request_data.get('mode', 'full').strip()
+            selector = request_data.get('selector', 'html').strip()
             include_content = request_data.get('include_content', True)  # New parameter
             
             # Validate required parameters
@@ -65,11 +67,14 @@ class ScraperHTTPHandler(BaseHTTPRequestHandler):
             print(f"   Method: {self.command}")
             print(f"   URL: {url}")
             print(f"   Mode: {mode}")
+            print(f"   Selector: {selector}")
             print(f"   Include Content: {include_content}")
             
             # Run the scraper with --return-content flag (no file saving)
             start_time = time.time()
             cmd_args = [sys.executable, 'quick_scraper.py', url, mode]
+            if selector != 'html':
+                cmd_args.extend(['--selector', selector])
             if include_content:
                 cmd_args.append('--return-content')
             
@@ -190,8 +195,9 @@ class ScraperHTTPHandler(BaseHTTPRequestHandler):
         <h4>Request Body (JSON):</h4>
         <pre>{
   "url": "https://www.morningstar.com/stocks/xnas/aapl/dividends",
-  "mode": "full",  // "stats" or "full"
-  "include_content": true  // true to include content in response, false for summary only
+  "mode": "full",  // "stats" or "full" (default: "full")
+  "selector": "#contenttablejqxgrid",  // CSS selector for specific content (default: "html")
+  "include_content": true  // true to include content in response (default: true)
 }</pre>
         
         <h4>Response:</h4>
@@ -213,7 +219,7 @@ class ScraperHTTPHandler(BaseHTTPRequestHandler):
         <h3><span class="method">GET</span> /scrape</h3>
         <p>Scrape using query parameters</p>
         <h4>Example:</h4>
-        <code>/scrape?url=https://finance.yahoo.com/quote/AAPL&mode=stats&include_content=true</code>
+        <code>/scrape?url=https://finance.yahoo.com/quote/AAPL&mode=full&selector=%23contenttablejqxgrid</code>
     </div>
     
     <h2>📝 Usage with .http files</h2>
